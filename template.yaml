@@ -16,6 +16,13 @@ Resources:
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
+      Events:
+        Timer:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
+          Metadata:
+            StackeryName: TriggerDailyEradication
 Parameters:
   StackTagName:
     Type: String
