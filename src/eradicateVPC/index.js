@@ -1,8 +1,8 @@
-const AWS = require('aws-sdk');
+const aws = require('aws-sdk');
 
 exports.handler = async () => {
   const ec2 = new aws.EC2();
-  const cs = new AWS.ConfigService();
+  const cs = new aws.ConfigService();
 
   // AWS regions for VPCs
   const regions = ['us-east-2', 'us-east-1', 'us-west-1', 'us-west-2', 'ap-south-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', 'ca-central-1', 'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-north-1', 'sa-east-1'];
@@ -14,14 +14,13 @@ exports.handler = async () => {
     'resourceType': 'AWS::EC2::VPC'
   }
 
-  const config = cs.listDiscoveredResources(configParams)
-  .promise()
-  .then(() => {
+  try {
+    const config = await cs.listDiscoveredResources(configParams).promise();
     console.log(config);
-  })
-  .catch((error) => {
-    console.log(error.message);
-  });
+  } catch (error) {
+    console.log(error);
+  }
+
 
   // for (let region of regions) {
   //   const configParams = {

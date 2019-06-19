@@ -1,1 +1,4 @@
 stack-name: aws-vpc-eradicator
+env-name: demo
+aws-profile: test
+function-id: eradicateVPC
