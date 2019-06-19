@@ -17,6 +17,8 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSConfigRole
+        - S3CrudPolicy:
+            BucketName: !Ref ObjectStore
       Events:
         Timer:
           Type: Schedule
@@ -24,6 +26,14 @@ Resources:
             Schedule: rate(1 day)
           Metadata:
             StackeryName: TriggerDailyEradication
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref ObjectStore
+          BUCKET_ARN: !GetAtt ObjectStore.Arn
+  ObjectStore:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-objectsto-${AWS::AccountId}
 Parameters:
   StackTagName:
     Type: String
