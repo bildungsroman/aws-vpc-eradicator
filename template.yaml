@@ -16,6 +16,7 @@ Resources:
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
+        - AWSConfigRole
       Events:
         Timer:
           Type: Schedule
