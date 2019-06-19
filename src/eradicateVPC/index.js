@@ -4,32 +4,43 @@ exports.handler = async () => {
   const ec2 = new aws.EC2();
   const cs = new aws.ConfigService();
 
-  // AWS regions for VPCs
-  const regions = ['us-east-2', 'us-east-1', 'us-west-1', 'us-west-2', 'ap-south-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1', 'ca-central-1', 'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-north-1', 'sa-east-1'];
   // We'll be using promises to make sure everything gets deleted
   let promiseArray = [];
   // be sure to add AWSConfigRole to function Policies
-  const configParams = {
-    'includeDeletedResources': false,
-    'resourceType': 'AWS::DynamoDB::Table' // AWS::EC2::VPC
-  }
+  const resourceParams = {
+    ConfigurationAggregatorName: 'vpc-eradicator', /* required */
+    ResourceType: 'AWS::DynamoDB::Table' // AWS::EC2::VPC
+  };
+
+  const countParams = {
+    resourceTypes: ['AWS::EC2::VPC']
+  };
 
   try {
-    const config = await cs.listDiscoveredResources(configParams).promise();
-    const configCount = await cs.getDiscoveredResourceCounts().promise();
-    console.log(config);
-    console.log(configCount);
+    const resources = await cs.listAggregateDiscoveredResources(resourceParams).promise();
+    const resourceCount = await cs.getDiscoveredResourceCounts(countParams).promise();
+
+    if (resourceCount.totalDiscoveredResources > 0) { // if there is a VPC
+      let VPC = resourceCount.totalDiscoveredResources === 1 ? 'VPC' : 'VPCs';
+
+      console.log(`Panic! ${resourceCount.totalDiscoveredResources} ${VPC} discovered!`)
+    } else {
+      console.log('No VPCs found here, your money is safe!')
+    }
+
+    console.log(resources);
+
   } catch (error) {
     console.log(error);
   }
 
 
   // for (let region of regions) {
-  //   const configParams = {
+  //   const resourceParams = {
   //     'includeDeletedResources': false,
   //     'resourceType': 'AWS::EC2::VPC'
   //   }
-  //   const config = cs.listDiscoveredResources(configParams)
+  //   const config = cs.listDiscoveredResources(resourceParams)
   //     .promise()
   //     .then(() => {
   //       console.log (config)
