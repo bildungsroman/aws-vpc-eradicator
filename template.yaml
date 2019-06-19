@@ -16,7 +16,8 @@ Resources:
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
-        - AWSConfigRole
+        - AWSConfigRole  # Allows function to see resources through AWS Config - function won't work without this!
+        - AmazonVPCFullAccess # Allows for VPC deletion - replace with appropriate policy for other resources
       Events:
         Timer:
           Type: Schedule

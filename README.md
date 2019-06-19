@@ -75,7 +75,7 @@ Alas, there's no avoiding the AWS Console on this one. You will need to create a
 
 6. Once all that looks good, click `Aggregated view`, then `Aggregators` in the sidebar
 7. Click `Add aggregator`
-8. Follow the prompts to give it a name and choose the account that houses your pesky VPC resources (or whatever resource you want to eradicate)
+8. Follow the prompts to give it a name (like `vpc-eradicator`) and choose the account that houses your pesky VPC resources (or whatever resource you want to eradicate)
 9. Select all regions!
 10. Click `Save` at the bottom
 11. You know what, just keep a refill for your beverage close, as this will definitely take a while
