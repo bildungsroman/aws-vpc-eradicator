@@ -17,8 +17,8 @@ Resources:
       Policies:
         - AWSXrayWriteOnlyAccess
         - AWSConfigRole
-        - S3CrudPolicy:
-            BucketName: !Ref ObjectStore
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Table
       Events:
         Timer:
           Type: Schedule
@@ -28,12 +28,21 @@ Resources:
             StackeryName: TriggerDailyEradication
       Environment:
         Variables:
-          BUCKET_NAME: !Ref ObjectStore
-          BUCKET_ARN: !GetAtt ObjectStore.Arn
-  ObjectStore:
-    Type: AWS::S3::Bucket
+          TABLE_NAME: !Ref Table
+          TABLE_ARN: !GetAtt Table.Arn
+  Table:
+    Type: AWS::DynamoDB::Table
     Properties:
-      BucketName: !Sub ${AWS::StackName}-objectsto-${AWS::AccountId}
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-Table
 Parameters:
   StackTagName:
     Type: String
