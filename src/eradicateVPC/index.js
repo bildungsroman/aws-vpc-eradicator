@@ -1,9 +1,13 @@
 const aws = require('aws-sdk');
 
+// TODO: Make it work for all regions!
+
 exports.handler = async () => {
   // List of resources related to VPCs in AWS. Note: the actual AWS::EC2::VPC needs to be last in the array, as AWS won't let you delete VPCs with existing dependencies - hence the for loop
   // See these fun docs for an explanation: https://aws.amazon.com/premiumsupport/knowledge-center/troubleshoot-dependency-error-delete-vpc/
-  const resourcesToEradicate = ['AWS::EC2::Subnet', 'AWS::EC2::NetworkAcl', 'AWS::EC2::NetworkInterface', 'AWS::EC2::RouteTable', 'AWS::EC2::SecurityGroup', 'AWS::EC2::InternetGateway', 'AWS::EC2::VPC'] // replace this with whatever resources you want deleted
+  // This is also relevent: https://forums.aws.amazon.com/thread.jspa?threadID=92407
+  // https://stackoverflow.com/questions/34325336/i-cant-delete-my-vpc
+  const resourcesToEradicate = [ 'AWS::EC2::NetworkInterface', 'AWS::EC2::InternetGateway', 'AWS::EC2::RouteTable', 'AWS::EC2::NetworkAcl', 'AWS::EC2::SecurityGroup', 'AWS::EC2::Subnet', 'AWS::EC2::VPC'] // replace this with whatever resources you want deleted
 
   try {
     for (let resource of resourcesToEradicate) {
