@@ -4,3 +4,4 @@
 
 # dependencies
 node_modules
+aws_delete-default-vpc.sh
