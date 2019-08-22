@@ -7,7 +7,8 @@ exports.handler = async () => {
   // See these fun docs for an explanation: https://aws.amazon.com/premiumsupport/knowledge-center/troubleshoot-dependency-error-delete-vpc/
   // This is also relevent: https://forums.aws.amazon.com/thread.jspa?threadID=92407
   // https://stackoverflow.com/questions/34325336/i-cant-delete-my-vpc
-  const resourcesToEradicate = [ 'AWS::EC2::NetworkInterface', 'AWS::EC2::InternetGateway', 'AWS::EC2::RouteTable', 'AWS::EC2::NetworkAcl', 'AWS::EC2::SecurityGroup', 'AWS::EC2::Subnet', 'AWS::EC2::VPC'] // replace this with whatever resources you want deleted
+  // Ruby example: https://gist.github.com/gregohardy/ef026eef3beddae49eb05ea0fe5993e0
+  const resourcesToEradicate = [ 'AWS::EC2::Subnet', 'AWS::EC2::InternetGateway', 'AWS::EC2::RouteTable', 'AWS::EC2::SecurityGroup', 'AWS::EC2::NetworkInterface', 'AWS::EC2::NetworkAcl', 'AWS::EC2::VPC'] // replace this with whatever resources you want deleted
 
   try {
     for (let resource of resourcesToEradicate) {
@@ -113,7 +114,7 @@ async function eradicateResources(resources) {
 
   try {
     await Promise.all(promiseArray);
-    console.log('Eradicating all!');
+    console.log('Eradication complete!');
   } catch (error) {;
     console.log(error);
   }
