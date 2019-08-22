@@ -12,12 +12,12 @@ Resources:
       Handler: index.handler
       Runtime: nodejs10.x
       MemorySize: 3008
-      Timeout: 30
+      Timeout: 900
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
-        - AWSConfigRole  # Allows function to see resources through AWS Config - function won't work without this!
-        - AmazonVPCFullAccess # Allows for VPC deletion - replace with appropriate policy for other resources
+        - AWSConfigRole
+        - AmazonVPCFullAccess
       Events:
         Timer:
           Type: Schedule
