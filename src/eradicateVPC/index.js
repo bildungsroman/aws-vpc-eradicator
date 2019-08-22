@@ -1,121 +1,208 @@
 const aws = require('aws-sdk');
 
-// TODO: Make it work for all regions!
-
 exports.handler = async () => {
-  // List of resources related to VPCs in AWS. Note: the actual AWS::EC2::VPC needs to be last in the array, as AWS won't let you delete VPCs with existing dependencies - hence the for loop
-  // See these fun docs for an explanation: https://aws.amazon.com/premiumsupport/knowledge-center/troubleshoot-dependency-error-delete-vpc/
-  // This is also relevent: https://forums.aws.amazon.com/thread.jspa?threadID=92407
-  // https://stackoverflow.com/questions/34325336/i-cant-delete-my-vpc
-  // Ruby example: https://gist.github.com/gregohardy/ef026eef3beddae49eb05ea0fe5993e0
-  const resourcesToEradicate = [ 'AWS::EC2::Subnet', 'AWS::EC2::InternetGateway', 'AWS::EC2::RouteTable', 'AWS::EC2::SecurityGroup', 'AWS::EC2::NetworkInterface', 'AWS::EC2::NetworkAcl', 'AWS::EC2::VPC'] // replace this with whatever resources you want deleted
+  // Get valid VPC regions
+  const ec2 = new aws.EC2();
+  const ec2Regions = await ec2.describeRegions().promise();
 
-  try {
-    for (let resource of resourcesToEradicate) {
-      console.log(`Beginning eradication on ${resource}`);
-      await findResources(resource);
-    }
-  } catch (error) {
-    console.log(error);
+  for (let region of ec2Regions.Regions) {
+    await runEradicator(region.RegionName);
   }
-
   return {};
 };
 
-async function findResources (resource) {
-  const cs = new aws.ConfigService();
+async function runEradicator (region) {
+  // We need to find and eradicate VPCs in one region at a time
+  const ec2region = new aws.EC2({region: region});
 
-  const resourceParams = {
-    ConfigurationAggregatorName: 'vpc-eradicator', /* required */
-    ResourceType: resource
-  };
-
-  // Get array of resources for eradication from AWS Config
-  const resources = await cs.listAggregateDiscoveredResources(resourceParams).promise();
-  console.log(resources);
-
-  if (resources.ResourceIdentifiers.length > 0) { // run eradicateResources function only if the resource was found
-    let count = resources.ResourceIdentifiers.length === 1 ? 'VPC resource' : 'VPC resources'; // good grammar is important
-    console.log(`Oh noes! ${resources.ResourceIdentifiers.length} ${count} discovered! Running eradicator.`);
-    // Run eradicateResources function on each instance of that resource
-    await eradicateResources(resources);
+  let findVpcs = await ec2region.describeVpcs().promise();
+  if (findVpcs.Vpcs.length > 0) { // run eradicateVpc function only if a VPC was found
+    let count = findVpcs.Vpcs.length === 1 ? 'VPC' : 'VPCs'; // good grammar is important
+    console.log(`Oh noes! ${findVpcs.Vpcs.length} ${count} discovered in region ${region}! Running eradicator.`);
+    await eradicateVpc(findVpcs.Vpcs, region);
+    //await eradicateResources(resources);
   } else {
-    console.log(`No ${resource} found here, your money is safe for now!`);
+    console.log(`No VPCs found in ${region}, your money is safe for now!`);
+  }
+};
+
+async function eradicateVpc(vpcs, region) {
+  const ec2region = new aws.EC2({region: region});
+
+  for (let vpc of vpcs) {
+    // First we need to find, detach and delete all resources related to each VPC in each region
+    // See these fun docs for an explanation: https://aws.amazon.com/premiumsupport/knowledge-center/troubleshoot-dependency-error-delete-vpc/
+    // This is also relevent: https://forums.aws.amazon.com/thread.jspa?threadID=92407
+    // And this: https://stackoverflow.com/questions/34325336/i-cant-delete-my-vpc
+    // Here's a Ruby example: https://gist.github.com/gregohardy/ef026eef3beddae49eb05ea0fe5993e0
+    // And the Python example this was lately based on (thank you!): https://abhishekis.wordpress.com/2017/04/26/python-script-to-remove-the-default-vpc-of-all-the-regions-in-an-aws-account/
+    const eni = await describeInterfaces(vpc.VpcId, ec2region);
+    await detachInterfaces(eni.attachmentIds, ec2region)
+    await deleteInterfaces(eni.eniIds, ec2region);
+    const subnetIds = await describeSubnets(vpc.VpcId, ec2region);
+    await deleteSubnets(subnetIds, ec2region);
+    const igwIds = await describeIgws(vpc.VpcId, ec2region)
+    await detachIgws(vpc.VpcId, igwIds, ec2region)
+    await deleteIgws(igwIds, ec2region)
+    // Now we can attempt to delete the VPC
+    await deleteVpc(vpc.VpcId, ec2region, region)
   }
 }
 
-async function eradicateResources(resources) {
-  const ec2 = new aws.EC2();
-  // We'll be using promises to make sure everything gets eradicated
-  let promiseArray = [];
+async function describeInterfaces(vpcId, ec2region) {
+  let eniList = [];
+  let attachmentList = [];
+  const params = {
+    DryRun: false,
+    Filters: [
+      {
+        Name: 'vpc-id', 
+        Values: [
+          vpcId
+        ]
+      }
+    ]
+  };
+  const response = await ec2region.describeNetworkInterfaces(params).promise();
 
-  for (let resource of resources.ResourceIdentifiers) {
-    let resourceId = resource.ResourceId;
-    let ec2action, params;
+  for (let eni of response.NetworkInterfaces) {
+    eniList.push(eni.NetworkInterfaceId);
+    attachmentList.push(eni.Attachment.AttachmentId);
+  }
 
-    // Set params and ec2 action based on resource type
-    switch (resource.ResourceType) {
-      case 'AWS::EC2::InternetGateway':
-        params = {
-          InternetGatewayId: resourceId
-        };
-        ec2action = ec2.deleteInternetGateway(params);
-        break;
-      case 'AWS::EC2::NetworkAcl':
-        params = {
-          NetworkAclId: resourceId
-        };
-        ec2action = ec2.deleteNetworkAcl(params);
-        break;
-      case 'AWS::EC2::NetworkInterface':
-        params = {
-          NetworkInterfaceId: resourceId
-        };
-        ec2action = ec2.deleteNetworkInterface(params);
-        break;
-      case 'AWS::EC2::RouteTable':
-        params = {
-          RouteTableId: resourceId
-        };
-        ec2action = ec2.deleteRouteTable(params);
-        break;
-      case 'AWS::EC2::SecurityGroup':
-        params = {
-          GroupId: resourceId
-        };
-        ec2action = ec2.deleteSecurityGroup(params);
-        break;
-      case 'AWS::EC2::Subnet':
-        params = {
-          SubnetId: resourceId
-        };
-        ec2action = ec2.deleteSubnet(params);
-        break;
-      case 'AWS::EC2::VPC':
-        params = {
-          VpcId: resourceId
-        };
-        ec2action = ec2.deleteVpc(params);
-        break;
+  return {
+    attachmentIds: attachmentList,
+    eniIds: eniList
+  }
+};
+
+async function detachInterfaces(attachmentIds, ec2region) {
+  for (let aId of attachmentIds) {
+    try {
+      await ec2region.detachNetworkInterface({
+        DryRun: false,
+        Force: true,
+        AttachmentId: aId
+      }).promise();
+      console.log(`Detaching ENI ${eni}`)
+    } catch (err) {
+      console.log(err.message);
     }
+  }
+};
 
-    const p = ec2action
-    .promise()
-    .then(() => {
-      console.log (`${resourceId} in region ${resource.SourceRegion} eradicated! Use that cash for something else!`)
-    })
-    .catch((error) => {
-      console.log(`Error deleting ${resourceId} in region ${resource.SourceRegion}.`);
-      console.log(error.message);
-    });
+async function deleteInterfaces(eniIds, ec2region) {
+  for (let eni of eniIds) {
+    try {
+      await ec2region.deleteNetworkInterface({
+        DryRun: false,
+        NetworkInterfaceId: eni
+      }).promise()
+      console.log(`Deleting ENI ${eni}`)
+    } catch (err) {
+      console.log(err.message);
+    }
+  }
+};
 
-    promiseArray.push(p);
+async function describeSubnets(vpcId, ec2region) {
+  let subnetList = [];
+  const params = {
+    DryRun: false,
+    Filters: [
+      {
+        Name: 'vpc-id', 
+        Values: [
+          vpcId
+        ]
+      }
+    ]
   };
 
-  try {
-    await Promise.all(promiseArray);
-    console.log('Eradication complete!');
-  } catch (error) {;
-    console.log(error);
+  const response = await ec2region.describeSubnets(params).promise();
+
+  for (let subnet of response.Subnets) {
+    subnetList.push(subnet.SubnetId);
   }
+
+  return subnetList;
+};
+
+async function deleteSubnets(subnetIds, ec2region) {
+  for (let subnet of subnetIds) {
+    try {
+      await ec2region.deleteSubnet({
+        DryRun: false,
+        SubnetId: subnet
+      }).promise()
+      console.log(`Deleting subnet ${subnet}`)
+    } catch (err) {
+      console.log(err.message);
+    }
+  }
+};
+
+async function describeIgws(vpcId, ec2region) {
+  let igwList = [];
+  const params = {
+    DryRun: false,
+    Filters: [
+      {
+        Name: 'attachment.vpc-id', 
+        Values: [
+          vpcId
+        ]
+      }
+    ]
+  };
+
+  const response = await ec2region.describeInternetGateways(params).promise();
+
+  for (let igw of response.InternetGateways) {
+    igwList.push(igw.InternetGatewayId);
+  }
+
+  return igwList;
+};
+
+async function detachIgws(vpcId, igwIds, ec2region) {
+  for (let igwId of igwIds) {
+    try {
+      await ec2region.detachInternetGateway({
+        DryRun: false,
+        InternetGatewayId: igwId, 
+        VpcId: vpcId
+      }).promise();
+      console.log(`Detaching IGW ${igwId}`)
+    } catch (err) {
+      console.log(err.message);
+    }
+  }
+};
+
+async function deleteIgws(igwIds, ec2region) {
+  for (let igwId of igwIds) {
+    try {
+      await ec2region.deleteInternetGateway({
+        DryRun: false,
+        InternetGatewayId: igwId
+      }).promise()
+      console.log(`Deleting IGW ${igwId}`)
+    } catch (err) {
+      console.log(err.message);
+    }
+  }
+};
+
+async function deleteVpc(vpcId, ec2region, region) {
+    try {
+      await ec2region.deleteVpc({
+        VpcId: vpcId,
+        DryRun: false
+      }).promise();
+      console.log (`${vpcId} in region ${region} eradicated! Use that cash for something else!`)
+    } catch (err) {
+      console.log(`Error deleting ${vpcId} in region ${region}.`);
+      console.log(err.message);
+    }
 }
