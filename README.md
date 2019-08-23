@@ -131,7 +131,7 @@ stackery undeploy -n <the offending stack name> -e <environment name>
 
 See [this Stack Overflow thread](https://stackoverflow.com/questions/45027830/cant-delete-aws-internet-gateway) for clarification.
 
-### How do you know the order of resource deletion?
+#### How do you know the order of resource deletion?
 
 I'm going by [this thread on the AWS forums](https://forums.aws.amazon.com/thread.jspa?threadID=92407), but it's from 2012 so who knows. Try moving things around if the function doesn't work for you.
 
