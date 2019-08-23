@@ -96,7 +96,7 @@ aws lambda invoke --function-name vpc-eradicator-dev-eradicateVPC output.log
 
 This won't show your local changes, so you'll have to re-deploy each time you make a change to the function (so save your liver and get the Stackery CLI for [local invoking](https://docs.stackery.io/docs/workflow/local-development/) already!).
 
-Of course, there are many moving parts here, and any errors or failures to delete dependencies could prevent further deletion. See the 'Known issues' section below, and consider contributing if you have any ideas for fixes!
+Of course, there are many moving parts here, and any errors or failures to delete dependencies will likely prevent VPC deletion. At the moment, this is most foolproof against default VPCs. See the 'Known issues' section below, and consider contributing if you have any ideas for improvements!
 
 ### Contributing
 
@@ -116,12 +116,12 @@ You are not allowed to manage 'ela-attach' attachments.
 and then
 
 ```bash
-The resource 'xxxxxxxxxxxxx' has dependencies and cannot be deleted.
+The vpc 'vpc-...' has dependencies and cannot be deleted.
 ```
 
-Unfortunately, network interfaces that are deployed as part of a Cloudformation stack won't let themselves be deleted other than in the AWS Console 😞
+Unfortunately, network interfaces that are deployed as part of a Cloudformation stack can only be deleted in the AWS Console 😞
 
-The good news is, you can undeploy the stack and get rid of all VPC resources in one go:
+The good news is, you can undeploy the stack and get rid of all your VPC resources in one go:
 
 ```bash
 stackery undeploy -n <the offending stack name> -e <environment name>
@@ -131,7 +131,7 @@ stackery undeploy -n <the offending stack name> -e <environment name>
 
 See [this Stack Overflow thread](https://stackoverflow.com/questions/45027830/cant-delete-aws-internet-gateway) for clarification.
 
-### How do you know the order of resource deletion
+### How do you know the order of resource deletion?
 
 I'm going by [this thread on the AWS forums](https://forums.aws.amazon.com/thread.jspa?threadID=92407), but it's from 2012 so who knows. Try moving things around if the function doesn't work for you.
 
