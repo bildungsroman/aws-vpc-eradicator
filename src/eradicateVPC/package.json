@@ -1,6 +1,7 @@
 {
-  "name": "function",
+  "name": "aws-vpc-eradicator",
   "version": "1.0.0",
+  "license": "MIT",
   "dependencies": {
     "aws-sdk": "~2"
   }
