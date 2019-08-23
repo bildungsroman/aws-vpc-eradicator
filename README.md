@@ -5,14 +5,17 @@ Tired of costly AWS bills because you forgot to delete a VPC once you were done 
 ### Benefits:
 ##### 💥 Keep at least a little of your money out of Jeff Bezos' pockets
 ##### 💥 Stop clogging your AWS account with dead resources
-##### 💥 Replace `'AWS::EC2::VPC'` in the function code with whatever resources you'd like to periodically eradicate
 ##### 💥 Your CTO will love you!
 
 ### Risks:
 ##### 💀 You'll save so much money, you'll be tempted to gamble it all when in Vegas for re:Invent, and will be savagely killed by the mob when you 10x your debts
-##### 💀 If your beverage of choice is tequila, you may want want to skip the 'Grab a beverage' instruction now and then (though that might make the AWS Console sections more bearable, so just go for it)
+##### 💀 If your beverage of choice is tequila, you may want want to skip the 'Grab a beverage' instruction now and then
 
 _No rewards with out the risks, amiright?_
+
+### Motivation:
+
+AWS [refuses to add an `--all-dependencies` option to `ec2 delete-vpc`](https://github.com/aws/aws-cli/issues/1721), so until they do (_ha!_), this may be the next best thing.
 
 ## 1. Setup
 
@@ -25,6 +28,7 @@ Use the [Stackery CLI](https://docs.stackery.io/docs/using-stackery/cli/) to cre
 ```bash
 stackery create -n vpc-eradicator -p github --github-org <your github username> --blueprint-git-url https://github.com/bildungsroman/aws-vpc-eradicator/
 ```
+_(Developer's note: creating stacks based on existing git repos is a pro feature. If you're on the free developer plan, you can clone this stack the old fashioned way and use [local deploy](https://docs.stackery.io/docs/workflow/deploying-serverless-stacks/#local-checkout) to deploy it to your AWS account.)_
 
 2. Once your stack is created, deploy it to your AWS account:
 
@@ -55,33 +59,7 @@ sam deploy --template-file template.yaml --stack-name vpc-eradicator --profile <
 
 ...just, don't.
 
-## 2. Add AWS Config
-
-Alas, there's no avoiding the AWS Console on this one. You will need to create an AWS Config account and an Aggregated View role. Luckily, this only needs to be done once.
-
-1. Navigate to [AWS Config](https://us-west-2.console.aws.amazon.com/config/home) in the AWS Console
-2. Click `Get started` and follow the prompts - it'll look something like this:
-
-![screenshot](img/1.png)
-
-3. You can skip the Config rules section, as that's not relevant here
-4. Review and click `Confirm`
-
-![screenshot](img/2.png)
-
-5. Grab another beverage. It'll take some time, but you should slowly see your Config Dashboard populate like so:
-
-![screenshot](img/3.png)
-
-6. Once all that looks good, click `Aggregated view`, then `Aggregators` in the sidebar
-7. Click `Add aggregator`
-8. Follow the prompts to give it a name (like `vpc-eradicator`) and choose the account that houses your pesky VPC resources (or whatever resource you want to eradicate)
-9. Select all regions!
-10. Click `Save` at the bottom
-11. You know what, just keep a refill for your beverage close, as this will definitely take a while
-12. You'll be ready to go when there's no longer an annoying warning banner in your `Aggregated view` dashboard
-
-## 3. Testing
+## 2. Testing
 
 Testing is easy with Stackery's `local invoke` command!
 
@@ -98,19 +76,63 @@ Testing is easy with Stackery's `local invoke` command!
 4. You should see something like this in the console if all goes well:
 
 ```bash
-
+2019-08-23T18:21:16.869Z        52fdfc07-2182-154f-163f-5f0f9a621d72    INFO    No VPCs found in ca-central-1, your money is safe for now!
+2019-08-23T18:21:17.968Z        52fdfc07-2182-154f-163f-5f0f9a621d72    INFO    No VPCs found in ap-southeast-1, your money is safe for now!
+2019-08-23T18:21:18.936Z        52fdfc07-2182-154f-163f-5f0f9a621d72    INFO    No VPCs found in ap-southeast-2, your money is safe for now!
+2019-08-23T18:21:19.738Z        52fdfc07-2182-154f-163f-5f0f9a621d72    INFO    No VPCs found in eu-central-1, your money is safe for now!
+2019-08-23T18:21:20.152Z        52fdfc07-2182-154f-163f-5f0f9a621d72    INFO    Oh noes! 1 VPC discovered in region us-east-1! Running eradicator.
+...
+2019-08-23T18:21:37.539Z        52fdfc07-2182-154f-163f-5f0f9a621d72    INFO    'vpc-09dsf5654123eaa' in region 'us-east-1' eradicated! Use that cash for something else!
 ```
+Sweet!
 
-If for some reason you don't use [Stackery](https://www.stackery.io/), you can invoke your deployed function using the AWS CLI's `invoke` command:
+If for some strange reason you don't use [Stackery](https://www.stackery.io/), you can invoke your deployed function using the AWS CLI's `invoke` command:
 
 ```bash
 aws lambda invoke --function-name vpc-eradicator-dev-eradicateVPC output.log
 ```
 
-The output should return something like:
+This won't show your local changes, so you'll have to re-deploy each time you make a change to the function (so save your liver and get the Stackery CLI for [local invoking](https://docs.stackery.io/docs/workflow/local-development/) already!).
+
+Of course, there are many moving parts here, and any errors or failures to delete dependencies could prevent further deletion. See the 'Known issues' section below, and consider contributing if you have any ideas for fixes!
+
+### Contributing
+
+Yes, please! This AWS VPC stuff is confusing, and anyone willing and able to make this app better is my 🦸!
+
+The only rules are document your stuff, and [Wheaton's Law](https://www.attorneyatwork.com/wheatons-law/), of course.
+
+### Known issues/FAQ
+
+#### Cloudformation stacks
+
+If you deployed a VPC as part of a Cloudformation stack, you'll likely run into errors such as:
 
 ```bash
+You are not allowed to manage 'ela-attach' attachments.
+```
+and then
 
+```bash
+The resource 'xxxxxxxxxxxxx' has dependencies and cannot be deleted.
 ```
 
-Sweet!
+Unfortunately, network interfaces that are deployed as part of a Cloudformation stack won't let themselves be deleted other than in the AWS Console 😞
+
+The good news is, you can undeploy the stack and get rid of all VPC resources in one go:
+
+```bash
+stackery undeploy -n <the offending stack name> -e <environment name>
+```
+
+#### Network vpc-xxxx has some mapped public addresses
+
+See [this Stack Overflow thread](https://stackoverflow.com/questions/45027830/cant-delete-aws-internet-gateway) for clarification.
+
+### How do you know the order of resource deletion
+
+I'm going by [this thread on the AWS forums](https://forums.aws.amazon.com/thread.jspa?threadID=92407), but it's from 2012 so who knows. Try moving things around if the function doesn't work for you.
+
+#### Who built this awesomeness/monstrosity (delete as necessary)?
+
+My name is Anna, and I'm a software engineer building fun serverless stuff over at [Stackery](https://www.stackery.io/) 👋
