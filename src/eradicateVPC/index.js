@@ -39,11 +39,12 @@ async function eradicateVpc(vpcs, region) {
     const eni = await describeInterfaces(vpc.VpcId, ec2region);
     await detachInterfaces(eni.attachmentIds, ec2region)
     await deleteInterfaces(eni.eniIds, ec2region);
-    const subnetIds = await describeSubnets(vpc.VpcId, ec2region);
-    await deleteSubnets(subnetIds, ec2region);
     const igwIds = await describeIgws(vpc.VpcId, ec2region)
     await detachIgws(vpc.VpcId, igwIds, ec2region)
     await deleteIgws(igwIds, ec2region)
+    //TODO routeTables, Network ACL's, Security groups
+    const subnetIds = await describeSubnets(vpc.VpcId, ec2region);
+    await deleteSubnets(subnetIds, ec2region);
     // Now we can attempt to delete the VPC
     await deleteVpc(vpc.VpcId, ec2region, region)
   }
