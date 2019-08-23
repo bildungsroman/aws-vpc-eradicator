@@ -15,7 +15,9 @@ _No rewards with out the risks, amiright?_
 
 ### Motivation:
 
-AWS [refuses to add an `--all-dependencies` option to `ec2 delete-vpc`](https://github.com/aws/aws-cli/issues/1721), so until they do (_ha!_), this may be the next best thing.
+The official [AWS way to delete a VPC and its dependencies](https://aws.amazon.com/premiumsupport/knowledge-center/troubleshoot-dependency-error-delete-vpc/) is to go into the AWS console and manually delete the VPC. In. Each. Region. So, if you have a default VPC in 16 or so regions that you want to delete, guess what you're doing for the next hour? 🤦
+
+AWS [refuses to add](https://forums.aws.amazon.com/thread.jspa?threadID=223412) an [`--all-dependencies` option to `ec2 delete-vpc`](https://github.com/aws/aws-cli/issues/1721), so until they do (_ha!_), this may be the next best thing.
 
 ## 1. Setup
 

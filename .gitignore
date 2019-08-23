@@ -4,7 +4,4 @@
 
 # dependencies
 node_modules
-
-# other stuff
-aws_delete-default-vpc.sh
-python-example.py
+examples/
