@@ -35,7 +35,7 @@ _(Developer's note: creating stacks based on existing git repos is a pro feature
 2. Once your stack is created, deploy it to your AWS account:
 
 ```bash
-stackery deploy -n vpc-eradicator -e <your enviornment name> -r master --aws-profile <your AWS account profile>
+stackery deploy -n vpc-eradicator -e <your environment name> -r master --aws-profile <your AWS account profile>
 
 # Example:
 # stackery deploy -n vpc-eradicator -e dev -r master --aws-profile dev-account

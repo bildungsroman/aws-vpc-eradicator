@@ -57,7 +57,7 @@ async function eradicateVpc(vpcs, region) {
     const subnetIds = await describeSubnets(vpc.VpcId, ec2region);
     await deleteSubnets(subnetIds, ec2region);
     // Now we can attempt to delete the VPC
-    await deleteVpc(vpc.VpcId, ec2region, region)
+    await deleteVpc(vpc.VpcId, ec2region, region);
   }
 }
 
