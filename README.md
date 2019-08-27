@@ -135,6 +135,14 @@ See [this Stack Overflow thread](https://stackoverflow.com/questions/45027830/ca
 
 I'm going by [this thread on the AWS forums](https://forums.aws.amazon.com/thread.jspa?threadID=92407), but it's from 2012 so who knows. Try moving things around if the function doesn't work for you.
 
+#### What if I just want to know if there's an active VPC, but I don't want to delete it?
+
+I also built a [VPC warning email sender](https://github.com/bildungsroman/vpc-warning) app that uses SNS to email you when it detects a VPC.
+
+#### Is there an equally entertaining blog post talking about the process of building this app?
+
+Why [yes there is](https://www.stackery.io/blog/delete-vpc-aws-sdk/), thanks for asking!
+
 #### Who built this awesomeness/monstrosity (delete as necessary)?
 
 My name is Anna, and I'm a software engineer building fun serverless stuff over at [Stackery](https://www.stackery.io/) 👋
