@@ -34,7 +34,7 @@ async function eradicateVpc(vpcs, region) {
     // This is also relevent: https://forums.aws.amazon.com/thread.jspa?threadID=92407
     // And this: https://stackoverflow.com/questions/34325336/i-cant-delete-my-vpc
     // Here's a Ruby example: https://gist.github.com/gregohardy/ef026eef3beddae49eb05ea0fe5993e0
-    // And the Python example this was lately based on (thank you!): https://abhishekis.wordpress.com/2017/04/26/python-script-to-remove-the-default-vpc-of-all-the-regions-in-an-aws-account/
+    // And the Python example this was largely based on (thank you!): https://abhishekis.wordpress.com/2017/04/26/python-script-to-remove-the-default-vpc-of-all-the-regions-in-an-aws-account/
     
     // 1. describe, detach and delete Elastic Network Interfaces (ENIs)
     const eni = await describeInterfaces(vpc.VpcId, ec2region);
