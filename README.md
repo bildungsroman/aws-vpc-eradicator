@@ -137,7 +137,7 @@ I'm going by [this thread on the AWS forums](https://forums.aws.amazon.com/threa
 
 #### What if I just want to know if there's an active VPC, but I don't want to delete it?
 
-I also built a [VPC warning email sender](https://github.com/bildungsroman/vpc-warning) app that uses SNS to email you when it detects a VPC.
+I also built a [VPC warning email sender](https://github.com/bildungsroman/vpc-warning) app that uses SES to email you when it detects a VPC.
 
 #### Is there an equally entertaining blog post talking about the process of building this app?
 
