@@ -16,7 +16,6 @@ Resources:
       Tracing: Active
       Policies:
         - AWSXrayWriteOnlyAccess
-        - AWSConfigRole
         - AmazonVPCFullAccess
       Events:
         Timer:
